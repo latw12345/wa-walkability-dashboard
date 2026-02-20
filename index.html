@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Washington Walkability Index</title>
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.1/mapbox-gl.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/style.css" />
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.7.20/c3.min.js"></script>
+</head>
+
+<body>
+
+  <div id="top" class="app">
+
+    <div id="map"></div>
+
+    <div id="title">Washington Walkability Index</div>
+    <div id="subtitle">
+      Choropleth by Census Block
+    </div>
+
+    <div id="panel">
+      <div class="panel-title">Filters</div>
+
+      <button id="resetBtn" class="reset-btn top-reset">
+        Reset Filters
+      </button>
+
+      <div class="control">
+        <label>
+          Walkability Range:
+          <span id="walkRangeLabel">1 - 20</span>
+        </label>
+        <input id="walkMin" type="range" min="1" max="20" step="1" value="1">
+        <input id="walkMax" type="range" min="1" max="20" step="1" value="20">
+      </div>
+
+      <div class="control">
+        <label>
+          Population Range:
+          <span id="popRangeLabel">0 - 7300</span>
+        </label>
+        <input id="popMin" type="range" min="0" max="7300" step="100" value="0">
+        <input id="popMax" type="range" min="0" max="7300" step="100" value="7300">
+      </div>
+
+      <div class="stats">
+        <div><strong>Visible Census Blocks:</strong> <span id="statCount">0</span></div>
+        <div><strong>Average Walkability:</strong> <span id="statAvgWalk">—</span></div>
+        <div><strong>Total Population:</strong> <span id="statPop">—</span></div>
+      </div>
+    </div>
+
+    <div id="chartBox">
+      <div class="panel-title">Surface Area by Walkability</div>
+      <div id="histChart"></div>
+    </div>
+
+    <div id="popChartBox">
+      <div class="panel-title">Population by Walkability</div>
+      <div id="popChart"></div>
+    </div>
+
+    <button id="toggleLabels">Toggle Labels</button>
+    <div id="legend"></div>
+
+    <button id="infoJumpBtn" class="info-jump" title="More information">
+      More Info ↓
+    </button>
+
+  </div>
+
+  <section id="infoPage">
+  <div class="infoWrap">
+    <div class="infoHeaderRow">
+      <h2>Understanding Walkability Across Washington State</h2>
+      <button id="backToMapBtn" class="back-btn">Back to Map ↑</button>
+    </div>
+
+    <h3>1. Purpose of This Dashboard</h3>
+    <p>
+      This dashboard examines the spatial distribution of neighborhood walkability across Washington State using the U.S.
+      Environmental Protection Agency's National Walkability Index at the census block level. Walkability is a key indicator 
+      of the built environment and reflects how easily residents can access daily destinations, such as jobs, services, schools,
+      and transit, without relying on a private automobile.
+    </p>
+    <p>
+      Walkable environments are associated with improved public health outcomes, reduced greenhouse gas emissions,
+      enhanced accessibility, and stronger local economic activity. By visualizing walkability spatially and allowing
+      interactive filtering by population and index range, this dashboard supports exploratory analysis of how built
+      environment structure varies across urban and rural contexts within the state.
+    </p>
+
+    <h3>2. What the National Walkability Index Measures</h3>
+    <p>
+      The National Walkability Index is a composite measure ranging from 1 (least walkable) to
+      20 (most walkable). It does not measure pedestrian safety or sidewalk condition directly.
+      Instead, it evaluates characteristics of the built environment that make walking more practical and likely.
+    </p>
+    <p>
+      Higher values indicate neighborhoods where destinations are closer together, land uses are more mixed, streets are
+      more connected, and transit access is stronger. Lower values typically correspond to auto-oriented, low-density, or
+      rural areas where destinations are farther apart.
+    </p>
+    <p>
+      In this dashboard, walkability is visualized as a choropleth map, where lighter shades represent
+      higher walkability scores.
+    </p>
+
+    <h3>3. Built Environment Components of Walkability</h3>
+    <p>
+      The dataset includes several component indicators that contribute to the composite index:
+    </p>
+    <ul>
+      <li><strong>D2A_EPHHM:</strong> Employment and household mix, representing proximity to destinations and activity centers.</li>
+      <li><strong>D2B_E8MIXA:</strong> Land use mix, measuring diversity of nearby uses (residential, commercial, institutional).</li>
+      <li><strong>D3B:</strong> Intersection density, a proxy for street network connectivity and block structure.</li>
+      <li><strong>D4A:</strong> Transit proximity and accessibility.</li>
+    </ul>
+    <p>
+      Each component also includes a national ranking version, representing percentile-based
+      comparisons across the United States. Together, these indicators capture structural characteristics of neighborhoods
+      that influence the feasibility and convenience of walking.
+    </p>
+
+    <h3>4. How to Interpret the Visualizations</h3>
+    <p>
+      This dashboard integrates a choropleth map, two complementary histograms,
+      and interactive filters. Each component highlights a different dimension
+      of walkability in Washington State.
+    </p>
+
+    <h4>Choropleth Map</h4>
+    <p>
+      The map displays the EPA National Walkability Index for each census block group.
+      Color intensity represents walkability class, with darker shades corresponding
+      to lower index values (less walkable environments) and lighter shades corresponding
+      to higher index values. Scores are grouped into five classes (1-5, 6-9, 10-12,
+      13-14, 15-20) to emphasize meaningful variation across the 1-20 scale.
+    </p>
+    <p>
+      When filters are applied, block groups outside the selected walkability or
+      population range are faded rather than removed. This preserves statewide
+      geographic context while emphasizing the selected subset. Clicking a block
+      group reveals its walkability score and total population.
+    </p>
+
+    <h4>Surface Area by Walkability (Histogram)</h4>
+    <p>
+      The first histogram aggregates total land surface area
+      (in acres) within each 2-point walkability bin (1-2, 3-4, ..., 19-20).
+      Rather than counting geographic units, this chart measures how much
+      physical land area falls into each walkability category.
+    </p>
+    <p>
+      This perspective highlights the spatial footprint of different development
+      patterns. Low-walkability categories often cover large rural areas, while
+      high-walkability categories tend to occupy smaller but more intensively
+      developed urban areas.
+    </p>
+
+    <h4>Population by Walkability (Histogram)</h4>
+    <p>
+      The second histogram aggregates total population within
+      the same 2-point walkability bins. Instead of measuring land area, this
+      chart sums the number of residents living in each walkability category.
+    </p>
+    <p>
+      Comparing population totals across bins reveals where people actually live
+      along the walkability spectrum. Some categories may contain limited land
+      area but house a substantial share of the state's population, while others
+      may cover extensive territory but include relatively few residents.
+    </p>
+
+    <h4>Filters</h4>
+    <p>
+      The walkability and population sliders allow users to dynamically restrict
+      the dataset by value range. As filters change:
+    </p>
+    <ul>
+      <li>The choropleth fades non-matching block groups.</li>
+      <li>The surface-area histogram recalculates total acres per bin.</li>
+      <li>The population histogram recalculates total residents per bin.</li>
+      <li>Summary statistics (visible units, average walkability, total population) update in real time.</li>
+    </ul>
+    <p>
+      Together, these components support interactive exploration of how
+      walkability, land area, and population distribution relate across
+      Washington's urban and rural landscapes.
+    </p>
+
+    <h3>5. Spatial Patterns in Washington State</h3>
+    <p>
+      Comparing the map and the two histograms reveals several clear patterns:
+    </p>
+    <ul>
+      <li>
+        The surface-area histogram shows that the largest share of
+        Washington's land area falls within the 3-4 walkability range,
+        followed by 1-2 and 5-6. Higher walkability categories (above 7-8) occupy
+        comparatively small portions of total land area.
+      </li>
+      <li>
+        In contrast, the population histogram peaks in the
+        11-12 and 13-14 ranges, indicating that a substantial
+        share of residents live in moderately to highly walkable environments.
+      </li>
+      <li>
+        Very high walkability categories (15-20) represent only a small fraction
+        of both land area and population, reflecting the limited spatial footprint
+        of the most compact urban environments.
+      </li>
+    </ul>
+    <p>
+      Together, these patterns highlight an important distinction between
+      land coverage and population concentration.
+      Lower walkability environments dominate in terms of physical land area,
+      while mid-to-higher walkability environments contain a larger share of
+      Washington's residents.
+    </p>
+
+    <h3>6. Limitations</h3>
+
+    <ul>
+      <li>
+        The National Walkability Index measures structural characteristics of the built environment,
+        not observed walking behavior or pedestrian activity.
+      </li>
+      <li>
+        The index does not account for sidewalk quality, topography, lighting, traffic safety,
+        crime, or perceived comfort, factors that also influence walkability in practice.
+      </li>
+      <li>
+        Values are calculated at the census block group level, meaning that local variation
+        within neighborhoods may be masked by area-wide averages.
+      </li>
+      <li>
+        Surface-area comparisons reflect geographic extent (acres), which may overrepresent
+        large rural block groups relative to compact urban areas.
+      </li>
+      <li>
+        The data represent a specific time period and may not capture recent land-use changes,
+        new transit investments, or evolving development patterns.
+      </li>
+    </ul>
+
+    <p>
+      While these limitations should be considered when interpreting the results,
+      the index provides a consistent framework for comparing built-environment
+      conditions across Washington State.
+    </p>
+  </div>
+</section>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
